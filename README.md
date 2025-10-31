@@ -29,25 +29,3 @@ Developed with **Django (Backend API)** and **React (Frontend SPA)** for speed, 
 
 ---
 
-## 🧩 Project Structure
-backend/
-├── core/
-├── products/ # Product App
-│ ├── models/
-│ │ ├── category.py
-│ │ ├── product.py
-│ │ ├── topdeal.py
-│ │ ├── product_image.py
-│ │ ├── wishlist.py
-│ │ ├── cart.py
-│ │ └── slidebar.py
-│ ├── utils/ # AI / Helper Functions
-│ │ ├── ai_features.py
-│ │ └── init.py
-│ ├── serializers.py
-│ ├── views.py
-│ ├── urls.py
-│ └── admin.py
-├── orders/
-├── users/
-└── manage.py
