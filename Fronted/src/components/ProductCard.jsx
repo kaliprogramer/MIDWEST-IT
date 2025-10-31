@@ -1,10 +1,13 @@
 import React, { useState, useContext } from 'react';
 import { ZoomContext } from '../Store/Main';
-
+import { useDispatch, useSelector } from "react-redux";
+import { addItem, removeItem, clearCart } from "../features/cart/cartSlice";
+  
 const ProductCard = ({ product }) => {
   const { setZoom, setZoomImage } = useContext(ZoomContext);
   const [isHovered, setIsHovered] = useState(false);
-
+  const dispatch = useDispatch();
+  const { items, total } = useSelector((state) => state.cart);
   // 🛒 Add to cart
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -19,7 +22,7 @@ const ProductCard = ({ product }) => {
     setZoomImage(product.image_url);
     setZoom(true);
   };
-
+  const sampleProduct = { id: 1, name: "Laptop", price: 50000 };
   return (
     <div
       className="bg-[#1a1a2e] rounded-xl overflow-hidden border border-gray-700 hover:border-purple-500 transition-all duration-300 card-hover group"
@@ -68,7 +71,7 @@ const ProductCard = ({ product }) => {
 
         {/* Add to Cart Button (hover bottom) */}
         <button
-          onClick={handleAddToCart}
+           onClick={() => dispatch(addItem(sampleProduct))}
           className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
             isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}

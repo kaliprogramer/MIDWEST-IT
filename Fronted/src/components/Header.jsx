@@ -1,11 +1,17 @@
 import React, { useState } from "react";
 import SearchResults from "./SearchResults";
+import { useDispatch, useSelector } from "react-redux";
+import { addItem, removeItem, clearCart } from "../features/cart/cartSlice";
 
 const Header = () => {
   const [searchText, setSearchText] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [results, setResults] = useState([]);
+  const dispatch = useDispatch();
+  const { items, total } = useSelector((state) => state.cart);
+
+  const sampleProduct = { id: 1, name: "Laptop", price: 50000 };
 
   // Input handlers
   const handleInputChange = (e) => setSearchText(e.target.value);
@@ -148,7 +154,7 @@ const Header = () => {
           <a href="/cart" className="relative hover:text-purple-400 transition">
             <i className="fas fa-shopping-cart text-2xl"></i>
             <span className="absolute -top-2 -right-3 bg-red-600 text-xs px-2 py-0.5 rounded-full">
-              0
+              {items.length}
             </span>
           </a>
         </div>
