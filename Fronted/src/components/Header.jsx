@@ -1,25 +1,71 @@
 import React, { useState } from "react";
-import SearchResults from "./SearchResults";
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { addItem, removeItem, clearCart } from "../features/cart/cartSlice";
 
 const Header = () => {
   const [searchText, setSearchText] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [results, setResults] = useState([]);
-  const dispatch = useDispatch();
+  const [loading, setLoading] = useState(false);
   const { items, total } = useSelector((state) => state.cart);
 
-  const sampleProduct = { id: 1, name: "Laptop", price: 50000 };
 
-  // Input handlers
+  const navigate = useNavigate();
+
+  // ✅ Handle Search (Image or Text)
+  const handleSearch = async (e) => {
+    e.preventDefault();
+
+    try {
+      setLoading(true);
+      let res;
+
+      // --- 🖼️ Image Search ---
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append("image", selectedFile);
+        res = await fetch("http://127.0.0.1:8000/api/search/", {
+          method: "POST",
+          body: formData,
+        });
+      }
+
+      // --- 🔤 Text Search ---
+      else if (searchText.trim()) {
+        res = await fetch("http://127.0.0.1:8000/api/search/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: searchText }),
+        });
+        
+
+      } else {
+        alert("Please enter a product name or upload an image!");
+        setLoading(false);
+        return;
+      }
+
+      // ✅ Parse response
+      const data = await res.json();
+      setLoading(false);
+ 
+     
+      navigate("/search", { state: { results: data } });
+      
+        // ✅ Navigate to Search Results page
+      
+    } catch (error) {
+      console.error("Search error:", error);
+      setLoading(false);
+    }
+  };
+
+  // ✅ Input Handlers
   const handleInputChange = (e) => setSearchText(e.target.value);
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) setSelectedFile(file);
   };
-
   const handleDragOver = (e) => {
     e.preventDefault();
     setIsDragOver(true);
@@ -30,25 +76,6 @@ const Header = () => {
     setIsDragOver(false);
     const file = e.dataTransfer.files[0];
     if (file) setSelectedFile(file);
-  };
-
-  // Search handler
-  const handleSearch = async (e) => {
-    e.preventDefault(); // ✅ Prevent page reload
-    const formData = new FormData();
-    formData.append("query", searchText);
-    if (selectedFile) formData.append("image", selectedFile);
-
-    try {
-      const res = await fetch("http://127.0.0.1:8000/api/search-by-image/", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      setResults(data); // show results inline
-    } catch (err) {
-      console.error("Search error:", err);
-    }
   };
 
   return (
@@ -86,7 +113,7 @@ const Header = () => {
               onDrop={handleDrop}
             >
               <i className="fas fa-image text-white mr-2"></i>
-              {selectedFile ? selectedFile.name : "Drag & Drop Image"}
+              {selectedFile ? selectedFile.name : "Upload Image"}
               <input
                 type="file"
                 accept="image/*"
@@ -98,7 +125,7 @@ const Header = () => {
             {/* Text Input */}
             <input
               type="text"
-              placeholder="Search Cool gadgets..."
+              placeholder="Search cool gadgets..."
               value={searchText}
               onChange={handleInputChange}
               className="w-full px-4 py-2 md:py-3 bg-[#151530] text-white focus:outline-none focus:ring-2 focus:ring-purple-600 transition-all border-t border-b border-purple-900/50"
@@ -107,9 +134,14 @@ const Header = () => {
             {/* Search Button */}
             <button
               type="submit"
-              className="bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 px-5 py-2 text-white rounded-r-md"
+              disabled={loading}
+              className="bg-gradient-to-r from-violet-600 to-purple-700 hover:from-violet-700 hover:to-purple-800 px-5 py-2 text-white rounded-r-md disabled:opacity-50"
             >
-              <i className="fas fa-search"></i>
+              {loading ? (
+                <i className="fas fa-spinner fa-spin"></i>
+              ) : (
+                <i className="fas fa-search"></i>
+              )}
             </button>
           </form>
         </div>
@@ -159,9 +191,6 @@ const Header = () => {
           </a>
         </div>
       </header>
-
-      {/* Show results below header */}
-      {results.length > 0 && <SearchResults results={results} />}
     </>
   );
 };

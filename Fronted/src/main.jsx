@@ -8,6 +8,7 @@ import MobileApp from './components/Mobile_Home.jsx'
 import { Provider } from "react-redux";
 import { store } from "./app/store";
 import ShoppingCart from './Pages/Cart.jsx'
+import SearchResults from './components/SearchResults.jsx'
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <Provider store={store}>
@@ -16,6 +17,7 @@ createRoot(document.getElementById('root')).render(
         <Route path="/" element={<Frame />} >
           <Route index element={<Home />} />
           <Route path='cart' element={<ShoppingCart />} />
+          <Route path='search' element={<SearchResults />} />
 
         </Route>
         <Route path="mobile" element={<MobileApp />} />

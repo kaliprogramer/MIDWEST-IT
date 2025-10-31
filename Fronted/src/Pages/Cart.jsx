@@ -12,7 +12,7 @@ const ShoppingCart = () => {
 
   const fetchCartItems = async () => {
     try {
-      const response = await axios.get('/api/cart/');
+      const response = await axios.get('http://127.0.0.1:8000/api/cart/');
       setCartItems(response.data.cart_items || []);
     } catch (error) {
       showMessage('Error loading cart items', 'error');

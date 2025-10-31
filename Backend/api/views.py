@@ -28,6 +28,89 @@ class AddToCartViewSet(viewsets.ModelViewSet):
         return addtoCart.objects.filter(buyer=self.request.user)
 
 
+# api/views.py
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.db.models import Q
+from .models import Product, extract_features, decode_ai_code
+from .serializers import ProductSerializer
+import numpy as np
+from PIL import Image
+import torch
+from torchvision import transforms
+from torchvision.models import resnet50, ResNet50_Weights
+
+# ----------------------------
+# 🔹 Load ResNet model globally
+# ----------------------------
+model = resnet50(weights=ResNet50_Weights.DEFAULT)
+model.eval()
+
+transformer = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+])
+
+
+def extract_query_features(image_file):
+    """Extract features from uploaded image."""
+    image = Image.open(image_file).convert("RGB")
+    img_t = transformer(image).unsqueeze(0)
+    with torch.no_grad():
+        features = model(img_t)
+    vector = features.flatten().numpy().astype(np.float32)
+    return vector
+
+
+def cosine_similarity(vec1, vec2):
+    """Compute cosine similarity between two vectors."""
+    return np.dot(vec1, vec2) / (np.linalg.norm(vec1) * np.linalg.norm(vec2))
+
+
+# -------------------------------------------------
+# 🔹 Combined API: Search by image OR name/description
+# -------------------------------------------------
+class ProductSearchAPIView(APIView):
+    """
+    Search products by uploaded image OR by text query (name/description).
+    """
+
+    def post(self, request):
+        # ---- Case 1: Image Search ----
+        if 'image' in request.FILES:
+            file = request.FILES['image']
+            query_vector = extract_query_features(file)
+
+            results = []
+            products = Product.objects.exclude(ai_image_code__isnull=True)
+            for product in products:
+                try:
+                    product_vector = decode_ai_code(product.ai_image_code)
+                    sim = cosine_similarity(query_vector, product_vector)
+                    results.append((sim, product))
+                except Exception as e:
+                    continue  # skip malformed encodings
+
+            results.sort(reverse=True, key=lambda x: x[0])
+            top_products = [p for _, p in results[:5]]
+            serializer = ProductSerializer(top_products, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # ---- Case 2: Text Search ----
+        query = request.data.get('query', '').strip()
+        if query:
+            products = Product.objects.filter(
+                Q(name__icontains=query) | Q(description__icontains=query)
+            )
+            serializer = ProductSerializer(products, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # ---- No valid input ----
+        return Response(
+            {'error': 'Please provide an image or a text query.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 
 
